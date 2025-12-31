@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>M CAT - Pro Nutrition Calc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #fce7f3; -webkit-tap-highlight-color: transparent; padding-bottom: env(safe-area-inset-bottom); }
+        .cat-bounce { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        input, select, button { font-size: 16px !important; -webkit-appearance: none; border-radius: 1rem; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-[0_20px_50px_rgba(244,114,182,0.3)] overflow-hidden border-4 border-pink-200">
+        
+        <div class="bg-pink-400 p-6 text-white text-center relative">
+            <div class="text-5xl mb-2 cat-bounce">ฅ^•ﻌ•^ฅ</div>
+            <h1 class="text-3xl font-black tracking-wider">M CAT</h1>
+            <p class="text-pink-100 text-xs mt-1 italic uppercase">RER & MER Nutrition Standard</p>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <div>
+                <label class="block text-sm font-semibold text-pink-600 mb-1 ml-2">⚖️ น้ำหนักตัว (กก.)</label>
+                <input type="number" id="weight" value="4" step="0.1" inputmode="decimal" class="w-full p-4 bg-pink-50 border-2 border-pink-100 rounded-2xl text-center text-xl font-bold text-gray-700">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-pink-600 mb-1 ml-2">🎂 ช่วงวัยและกิจกรรม (MER)</label>
+                <select id="status" class="w-full p-4 bg-pink-50 border-2 border-pink-100 rounded-2xl">
+                    <option value="1.2">แมวโต (ทำหมัน/กิจกรรมน้อย)</option>
+                    <option value="1.4">แมวโต (ยังไม่ทำหมัน/ซน)</option>
+                    <option value="2.0">ลูกแมว (4 เดือน - 1 ปี)</option>
+                    <option value="3.0">ลูกแมวเล็ก (ต่ำกว่า 4 เดือน)</option>
+                    <option value="0.8">ลดน้ำหนัก (แมวอ้วน)</option>
+                    <option value="1.1">แมวสูงวัย (7 ปีขึ้นไป)</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-pink-400 uppercase text-center">⚡ kcal ข้างถุง</label>
+                    <input type="number" id="kcal" value="3500" inputmode="numeric" class="w-full mt-1 p-3 bg-pink-50 border border-pink-100 rounded-xl text-center">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-pink-400 uppercase text-center">🛍️ ขนาดถุง (กก.)</label>
+                    <input type="number" id="bag" value="1.2" step="0.1" inputmode="decimal" class="w-full mt-1 p-3 bg-pink-50 border border-pink-100 rounded-xl text-center">
+                </div>
+            </div>
+
+            <button onclick="calculate()" class="w-full bg-pink-500 active:bg-pink-700 text-white font-bold py-5 rounded-2xl shadow-lg transition duration-150 text-xl">
+                💖 คำนวณตามหลัก MER
+            </button>
+        </div>
+
+        <div id="result-box" class="hidden p-6 bg-pink-50 border-t-2 border-dashed border-pink-200">
+            <div class="text-center mb-4">
+                <p class="text-xs text-pink-400 font-bold uppercase tracking-widest">Daily Target</p>
+                <div class="text-6xl font-black text-pink-500 my-2"><span id="grams">0</span><span class="text-xl font-normal ml-1">กรัม</span></div>
+                <p id="per-meal" class="text-sm text-pink-700 font-medium"></p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl text-[11px] text-pink-500 leading-relaxed shadow-sm">
+                <p class="font-bold border-b border-pink-50 mb-2 pb-1">💡 ข้อมูลทางโภชนาการสำหรับน้อง:</p>
+                <p>• พลังงานพื้นฐาน (RER): <span id="rer-val" class="font-bold"></span> kcal</p>
+                <p>• พลังงานที่ใช้จริง (MER): <span id="mer-val" class="font-bold"></span> kcal/วัน</p>
+                <p class="mt-2 italic text-[10px] text-pink-300">*คำนวณจากสูตร RER = 70 × (kg)^0.75</p>
+            </div>
+            
+            <p id="last-day" class="mt-4 text-center text-xs font-bold text-pink-800 bg-pink-100 py-2 rounded-lg"></p>
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const w = parseFloat(document.getElementById('weight').value);
+            const merFactor = parseFloat(document.getElementById('status').value);
+            const kcalPerKg = parseFloat(document.getElementById('kcal').value);
+            const bagSize = parseFloat(document.getElementById('bag').value);
+
+            if (!w || !kcalPerKg) return;
+
+            // RER = 70 * (weight ^ 0.75)
+            const rer = 70 * Math.pow(w, 0.75);
+            // MER = RER * Factor
+            const mer = rer * merFactor;
+            
+            const grams = Math.round((mer / kcalPerKg) * 1000);
+            const days = Math.floor((bagSize * 1000) / grams);
+
+            document.getElementById('grams').innerText = grams;
+            document.getElementById('rer-val').innerText = rer.toFixed(0);
+            document.getElementById('mer-val').innerText = mer.toFixed(0);
+            document.getElementById('per-meal').innerText = "🥛 แบ่งกินมื้อละ " + Math.round(grams/2) + " กรัม (2 มื้อ)";
+            document.getElementById('last-day').innerText = "อาหารถุงนี้จะหมดใน " + (days || 0) + " วันนะเมี๊ยววว";
+            
+            const rb = document.getElementById('result-box');
+            rb.classList.remove('hidden');
+            document.activeElement.blur();
+            
+            setTimeout(() => {
+                rb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
